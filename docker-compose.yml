@@ -1,0 +1,50 @@
+version: '3.6'
+
+volumes:
+  db-data:
+  composer-cache:
+
+services:
+  db:
+    image: 'mysql:5.7.30'
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3308:3306"
+    networks:
+      local:
+    volumes:
+      - "db-data:/var/lib/mysql"
+
+  php:
+    build:
+      context: docker/php
+      args:
+        PHP_VERSION: 7.4
+        USER_GID: 1000
+        USER_UID: 1000
+    environment:
+      PHP_INI_MEMORY_LIMIT: 512M
+      PHP_IDE_CONFIG: "serverName=Client"
+    ports:
+      - "${SOCKET_PORT}:${SOCKET_PORT}"
+    networks:
+      local:
+        aliases:
+          - client.loc
+      event-server:
+    volumes:
+      - "composer-cache:/srv/.composer"
+      - ".:/srv"
+
+networks:
+  local:
+    driver: bridge
+  event-server:
+    external:
+      name: server

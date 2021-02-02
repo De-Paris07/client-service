@@ -1,0 +1,66 @@
+client_event:
+    service_name: '%service_name%'
+    host: '%host%'
+    queue_host: '%pheanstalk_server%'
+    event_server_address: '%event_server_address%'
+    receive_historical_data: false
+    command_polling_interval: 300 #// интервал опроса всех дочерних процессов
+    socket_write_timeout: 60 #// максимальное время, за которое процесс должен ответить на команду, иначе мастер-процесс его перезапустит
+    tcp_socket_port: '%socket_port%'
+    use_query: true
+    server_health_send: true
+    commands:
+        default:
+            daemon: true
+            min_instance_consumer: 2
+            max_instance_consumer: 10
+            enabled: true
+        query:
+            daemon: true
+            enabled: true
+        cronJob:
+            daemon: false
+            consumer: false
+            cmd: "app:cron"
+            schedule: "* * * * *"
+            enabled: true
+        dispatcher:
+            daemon: false
+            consumer: false
+            cmd: "app:dispatcher"
+            interval_tick: 30
+            min_instance_consumer: 1
+            max_instance_consumer: 1
+            enabled: true
+        daemonJob:
+            daemon: true
+            consumer: false
+            cmd: "app:daemon"
+            interval_tick: 10
+            min_instance_consumer: 1
+            max_instance_consumer: 1
+            enabled: true
+        other:
+            daemon: false
+            downtime_for_destruction: 30
+            enabled: true
+        healthCheck:
+            enabled: true
+        retry:
+            enabled: true
+        socketHandler:
+            enabled: true
+    # список отправляемых событий
+    events_sent:
+      - { name: test, target_object: App\Event\TestEvent }
+      - { name: other, target_object: App\Event\OtherEvent }
+    # список событий, на которые подписываемся
+    events_subscribe:
+        test:
+            target_object: App\Event\TestEvent
+        other:
+            target_object: App\Event\OtherEvent
+            channel: other
+            retry: true #// повторная обработка события в случае ошибки
+            interval_retry: 60
+            count_retry: 5
